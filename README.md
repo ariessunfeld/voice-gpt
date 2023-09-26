@@ -28,7 +28,12 @@
 
 # Usage
 
-To run the program, open the terminal, navigate to the directory containing the main python file and your .env file. (Note: the .env file will not be visible in the Finder by default. To confirm its presence after creating it (step 0.5), run `ls -a` in the terminal, or press Cmd+Shift+. (period) in Finder. It should have a single line of text: `OPENAI_API_KEY="your key here"`
+To run the program, open the terminal, navigate to the directory containing 
+the main python file and your .env file. (Note: the .env file will not be 
+visible in the Finder by default. To confirm its presence after creating 
+it (step 0.5), run `ls -a` in the terminal, or press Cmd+Shift+. (Command 
+shift period) in the Finder. It should have a single line of text: 
+`OPENAI_API_KEY=your_key_here`
 
 Once in the correct location, in the Terminal, make sure the environment is active (run `source/venv/bin/activate`), then run the following: `sudo python starter_code.py`
 
