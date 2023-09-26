@@ -10,7 +10,7 @@
 
 0.4 Create an OpenAI API key here: https://platform.openai.com/account/api-keys
 
-0.5 Copy your OpenAI API key to the clipboard, then add it to a new file called ".env" by running the following in the terminal: echo "paste_your_open_ai_key_here" > .env
+0.5 Copy your OpenAI API key to the clipboard, then add it to a new file called `.env` by running the following in the terminal: `echo "OPENAI_API_KEY=your_openai_api_key" > .env`
 
 ### installations with `brew`
 
