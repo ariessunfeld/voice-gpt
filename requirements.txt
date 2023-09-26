@@ -1,0 +1,6 @@
+keyboard
+pyaudio
+pydub
+openai
+python-dotenv
+requests
