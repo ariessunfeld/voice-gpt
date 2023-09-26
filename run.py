@@ -1,5 +1,6 @@
 import os
 import json
+import yaml
 import time
 import pyaudio
 import collections
@@ -8,17 +9,20 @@ from pydub import AudioSegment
 import openai
 from dotenv import load_dotenv
 
-#print(keyboard._canonical_names.canonical_names)
-
+from prompt import HEADER_PROMPTS
 
 class AudioProcessor:
-    def __init__(self, frame_rate=48000, frames_per_buffer=8192, buffer_duration=10):
+    def __init__(self, frame_rate=48000, frames_per_buffer=8192, buffer_duration=10, max_message_history=12, allow_history=False, print_transcript=False, trigger_key='right option'):
         """
         Arguments:
             frame_rate: Set to the Hz of your syste microphone (usually 48000 or 44100)
             frames_per_buffer: any reasonable and large int should work
             buffer_duration: N seconds to keep in the sliding context window
         """
+        self.max_message_history = max_message_history
+        self.allow_history = allow_history
+        self.print_transcript = print_transcript
+        self.trigger_key = trigger_key
         self.frame_rate = frame_rate
         self.frames_per_buffer = frames_per_buffer
         self.buffer_duration = buffer_duration
@@ -28,9 +32,19 @@ class AudioProcessor:
         self.stream = self.p.open(format=pyaudio.paInt16, channels=1, rate=self.frame_rate, input=True,
                                   frames_per_buffer=self.frames_per_buffer)
         self.user_triggered = False
-        keyboard.hook_key('right option', self.on_trigger)
+
+        keyboard.hook_key(self.trigger_key, self.on_trigger)
 
         self.state = 'idle'
+
+        # Prompt-engineering messages
+        self.header_messages = HEADER_PROMPTS
+
+        # User and GPT response messages
+        if self.allow_history:
+            self.messages = collections.deque(maxlen=self.max_message_history)
+        else:
+            self.messages = collections.deque(maxlen=1)
 
     def on_trigger(self, e):
         """Callback function to detect the trigger key"""
@@ -83,18 +97,20 @@ class AudioProcessor:
         audio_segment.export("buffer_audio.mp3", format="mp3")
         
         whisper_transcript = self.transcribe_audio()
+
+        self.handle_transcription(whisper_transcript)
+
+        self.messages.append({"role": "user", "content": whisper_transcript})
         
         gpt_response = openai.ChatCompletion.create(
             model='gpt-4',
-            messages = [
-                {"role": "system", "content": "You are a helpful assistant. You try to give short and accuracte answers to technical questions, even when the questions lack context. You do not include preamble in your responses; you just respond with the answer to the question being asked."},
-                {"role": "user", "content": "I am going to be sending you transcriptions of short audio snippets of my speech. In these transcriptions, I will usually be repeating a question that was just asked of me. I want you to try to answer the questions I pose as concisely and accurately as possible, so that I could easily continue saying what I was just saying and follow it up with your answer and it would seem like natural speech. Are you ready?"},
-                {"role": "assistant", "content": "Yes, I am ready. Please send me the first question, and I will respond consicely and accurately respond so that you could follow up with my response and it would sound natural."},
-                {"role": "user", "content": whisper_transcript}
-            ]
+            messages = self.header_messages + list(self.messages)
         )
 
-        print(gpt_response['choices'][0]['message']['content'])
+        gpt_response_text = gpt_response['choices'][0]['message']['content']
+        self.messages.append({"role": "assistant", "content": gpt_response_text})
+        
+        self.handle_response(gpt_response_text)
 
 
     def transcribe_audio(self):
@@ -103,9 +119,34 @@ class AudioProcessor:
             transcript = openai.Audio.transcribe("whisper-1", audio_file)
             return transcript.text
 
+    def handle_response(self, text):
+        """Do something with the response from GPT"""
+        # Default: just print it out
+        print(text)
+    
+    def handle_transcription(self, text):
+        """Do something with the transcription from Whisper"""
+        # Default: just print it out
+        if self.print_transcript:
+            print('\nYou:', text, '\n')
+
 
 if __name__ == '__main__':
+   
     load_dotenv()
     openai.api_key = os.getenv("OPENAI_API_KEY")
-    audio_processor = AudioProcessor()
+
+    with open('config.yaml', 'r') as file:
+        config = yaml.safe_load(file)
+    
+    audio_processor = AudioProcessor(
+        config['microphone_frequency'],
+        config['microphone_frames_per_buffer'],
+        config['audio_window_length'], 
+        config['followup_question_window_size'], 
+        config['allow_followup_questions'],
+        config['print_whisper_transcript'],
+        config['trigger_key']
+    )
+
     audio_processor.run()

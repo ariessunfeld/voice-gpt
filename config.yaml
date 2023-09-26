@@ -1,0 +1,24 @@
+# You can choose the model, "gpt-3.5-turbo" is an alternative
+model: "gpt-4"  
+
+# The length of the audio window (in seconds)
+audio_window_length: 10
+
+# Frequency of the microphone, typically 44100 or 48000
+microphone_frequency: 48000  
+
+# Number of frames to include in the buffer
+microphone_frames_per_buffer: 8192
+
+# Whether to allow follow-up questions
+allow_followup_questions: false  
+
+# Whether to print the Whisper transcript
+print_whisper_transcript: false
+
+# If follow-up questions are allowed, the window size for them
+followup_question_window_size: 12
+
+# The keyboard key to press to send audio to Whisper & GPT
+trigger_key: "right option"
+
