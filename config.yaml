@@ -1,5 +1,5 @@
 # You can choose the model, "gpt-3.5-turbo" is an alternative
-model: "gpt-4"  
+model: "gpt-3.5-turbo"  
 
 # The length of the audio window (in seconds)
 audio_window_length: 10
